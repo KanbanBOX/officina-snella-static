@@ -6,6 +6,7 @@
 - removes WordPress head cruft that needs a live backend (feeds, oEmbed, xmlrpc, emoji)
 - removes the GDPR Cookie Compliance banner and its assets
 - points the Google Fonts stylesheet to the self-hosted copy in fonts/
+- replaces the Google Maps embed on the contact page with a link
 - turns ".../index.html" links into directory links
 - rewrites leftover absolute links to the original domain into relative ones
 """
@@ -41,7 +42,8 @@ COOKIE_BANNER = [
     r'<script type=["\']text/javascript["\'] src=["\'][^"\']*gdpr-cookie-compliance/[^"\']*["\']>\s*</script>\s*',
     r'<script type=["\']text/javascript["\']>\s*var gdpr_consent__strict.*?</script>\s*',
 ]
-COOKIE_PLUGIN_DIR = "wp-content/plugins/gdpr-cookie-compliance"
+MAPS_LINK = "https://www.google.com/maps/search/?api=1&amp;query=Simal+Business+Center%2C+Via+Zamenhof+817%2C+36100+Vicenza"
+COOKIE_PLUGIN_DIR ="wp-content/plugins/gdpr-cookie-compliance"
 
 
 with open(os.path.join(os.path.dirname(__file__), "shortlinks.json")) as fh:
@@ -97,6 +99,12 @@ def fix_text(path, text):
     )
     # images still linked to the old staging host (now offline) -> local copy
     text = re.sub(r'(src=["\'])https?://officinasnella\.nextep\.it/', lambda m: m.group(1) + prefix, text)
+    # Google Maps embed (loads Google on page view) -> plain link
+    text = re.sub(
+        r'<iframe[^>]*src="https://www\.google\.com/maps/embed[^"]*"[^>]*></iframe>(?:<br />\s*<small></small>)?',
+        '<a href="' + MAPS_LINK + '" target="_blank" rel="noopener"><strong>Apri la mappa su Google Maps</strong></a>',
+        text,
+    )
     # ?p=NN shortlinks (saved by wget as index.html@p=NN.html) -> real page
     text = re.sub(
         r'(["\'])(?:\.\./)*index\.html@p=(\d+)\.html(?=["\'#])',
