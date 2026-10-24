@@ -1,0 +1,119 @@
+/******************************************  
+ CUSTOM STYLESHEET
+*******************************************/
+
+/*
+* You can place your custom CSS statements in this file, after this message.
+* It is better to write everything custom here
+* because this file won't be replaced during updates.
+* 
+* Simply copy an existing style from style.css to this file, 
+* and modify it to your liking.
+*/
+
+#logo {
+	background-color: #ffd321;
+	padding: 0;
+}
+
+/* Main Dropdown Menu */
+
+#menu-main li {
+	font-size: 11px;
+	padding-left: 20px;
+}
+
+#nav-main-menu .dropdown ul li {
+	font-size: 11px;
+	line-height: 21px;
+}
+
+#menu-main li.current-menu-item li a, #menu-main li.current-item li a {
+	color: #ffd321;
+} 
+
+#menu-main li li a:hover {
+	background-color: #ffd321;
+}
+
+.page-yellow .title-post {
+	background-color: #ffd321;
+}
+
+.service-yellow .featured-service-wrapper, .service-yellow .title-post {
+	background-color: #ffd321;
+}
+
+div.navigation .current {
+	background-color: #ffd321;
+}
+
+div.navigation a:hover {
+	background-color: #ffd321; 
+}
+
+/* MAIN COLUMN */
+
+/*
+#main a {
+	padding: 0 5px;
+}
+
+#main a:hover {
+	background-color: #000;
+}
+*/
+
+/* RIGHT COLUMN */
+
+.wrapper-aside a {
+	color: #000000;
+}
+.wrapper-aside a:hover {
+	color: #aaa;
+}
+
+/* EVENTS */
+
+.event-display-boxes {
+	margin: 10px;
+	padding: 10px;
+	background-color: #F6F6F6;
+	-webkit-border-radius: 10px;
+	-moz-border-radius: 10px;
+	border-radius: 10px;
+}
+
+.event-meta p {
+	margin-bottom: 3px;
+}
+
+.section-title {
+	font-weight: bold;
+}
+
+.register-link-footer {
+	text-align: center;
+}
+
+/* BUTTON */
+
+.button, .a_register_link {
+	background-color:#ffd321;
+	display:inline-block;
+	cursor:pointer;
+	color:#000000;
+	font-size:15px;
+	padding:15px 15px !important;
+	text-decoration:none;
+	border: 1px solid #000000;
+}
+.button:hover, .a_register_link:hover {
+	color:#ffd321;
+	background-color:#5cbf2a;
+	text-decoration:none !important;
+}
+.button:active, .a_register_link:hover {
+	position:relative;
+	top:1px;
+}
