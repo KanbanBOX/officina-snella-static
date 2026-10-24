@@ -4,12 +4,14 @@
 - strips query-string suffixes wget baked into asset filenames
   (e.g. jquery.js@ver=1.12.4 -> jquery.js, style.css@ver=4.9.34.css -> style.css)
 - removes WordPress head cruft that needs a live backend (feeds, oEmbed, xmlrpc, emoji)
+- removes the GDPR Cookie Compliance banner and its assets
 - turns ".../index.html" links into directory links
 - rewrites leftover absolute links to the original domain into relative ones
 """
 import json
 import os
 import re
+import shutil
 import sys
 
 ROOT = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else "site")
@@ -24,11 +26,21 @@ FONT_HTML_RE = re.compile(r"(\.(?:woff2?|ttf|eot|otf))\.html(?=$|[\"'\s)#?<>])")
 HEAD_CRUFT = [
     r'<link rel=["\'](?:pingback|EditURI|wlwmanifest|https://api\.w\.org/|shortlink)["\'][^>]*>\s*',
     r'<link rel=["\']alternate["\'] type=["\'](?:application/rss\+xml|application/json\+oembed|text/xml\+oembed)["\'][^>]*>\s*',
-    r'<link rel=["\']dns-prefetch["\'] href=["\']//s\.w\.org["\'][^>]*>\s*',
+    r'<link rel=["\']dns-prefetch["\'] href=["\'](?:https?:)?//s\.w\.org/?["\'][^>]*>\s*',
     r'<meta name=["\']generator["\'][^>]*>\s*',
     r'<script type=["\']text/javascript["\']>\s*window\._wpemojiSettings.*?</script>\s*',
     r'<style type=["\']text/css["\']>\s*img\.wp-smiley.*?</style>\s*',
 ]
+# GDPR Cookie Compliance plugin: banner, settings modal, CSS and JS (the static site sets no cookies)
+COOKIE_BANNER = [
+    r'<link rel=["\']stylesheet["\'] id=["\']moove_gdpr_frontend-css["\'][^>]*>\s*',
+    r'<style id=["\']moove_gdpr_frontend-inline-css["\'].*?</style>\s*',
+    r'\s*<!--copyscapeskip-->.*?<!--/copyscapeskip-->',
+    r'<script type=["\']text/javascript["\']>\s*/\* <!\[CDATA\[ \*/\s*var moove_frontend_gdpr_scripts.*?</script>\s*',
+    r'<script type=["\']text/javascript["\'] src=["\'][^"\']*gdpr-cookie-compliance/[^"\']*["\']>\s*</script>\s*',
+    r'<script type=["\']text/javascript["\']>\s*var gdpr_consent__strict.*?</script>\s*',
+]
+COOKIE_PLUGIN_DIR = "wp-content/plugins/gdpr-cookie-compliance"
 
 
 with open(os.path.join(os.path.dirname(__file__), "shortlinks.json")) as fh:
@@ -73,7 +85,7 @@ def fix_text(path, text):
     text = FONT_HTML_RE.sub(r"\1", text)
     if not path.endswith(".html"):
         return text
-    for pat in HEAD_CRUFT:
+    for pat in HEAD_CRUFT + COOKIE_BANNER:
         text = re.sub(pat, "", text, flags=re.S | re.I)
     prefix = relpath_to_root(path)
     # ?p=NN shortlinks (saved by wget as index.html@p=NN.html) -> real page
@@ -119,6 +131,7 @@ def main():
             os.remove(os.path.join(ROOT, f))
     for dup in DUPLICATES:
         os.remove(os.path.join(ROOT, dup))
+    shutil.rmtree(os.path.join(ROOT, COOKIE_PLUGIN_DIR), ignore_errors=True)
     # GitHub Pages: don't run Jekyll, serve files as-is
     open(os.path.join(ROOT, ".nojekyll"), "w").close()
 
