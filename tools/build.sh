@@ -45,6 +45,9 @@ wget --mirror --page-requisites --convert-links --adjust-extension --restrict-fi
   --reject-regex='(xmlrpc\.php|wp-json|/feed/|wp-login|replytocom|/comments/|wlwmanifest|wp-admin|%7B|%5C|/http/)' \
   -i "$URLS" -P "$OUT" || [ $? -eq 8 ]
 
+# WordPress' own "not found" page, served by GitHub Pages for any missing URL
+curl -sS -o "$OUT/404.html" "$BASE/pagina-inesistente-404/"
+
 # self-hosted assets that replace third-party ones (e.g. Google Fonts)
 cp -r static/. "$OUT/"
 python3 tools/postprocess.py "$OUT"

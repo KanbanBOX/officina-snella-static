@@ -17,7 +17,9 @@ Lo script:
 
 Per un dominio personalizzato, creare un file `CNAME` nella root del repo: `build.sh` lo copia in `docs/`.
 
-I file in `static/` (font, immagini mancanti) vengono copiati in `docs/` a ogni build.
+Rimuove anche le pagine che servivano solo al backend (prenotazioni eventi), quelle vuote e quelle obsolete (elenco in `REMOVED_PAGES`), e scarica la pagina 404 di WordPress come `404.html`.
+
+I file in `static/` (font, immagini e PDF mancanti) vengono copiati in `docs/` a ogni build.
 
 ## Limiti
 

@@ -7,6 +7,8 @@
 - removes the GDPR Cookie Compliance banner and its assets
 - points the Google Fonts stylesheet to the self-hosted copy in fonts/
 - replaces the Google Maps embed on the contact page with a link
+- removes backend-only, empty and outdated pages; fixes or unwraps links to pages that don't exist
+- makes the WordPress 404 page (fetched by build.sh) usable as GitHub Pages' 404.html
 - turns ".../index.html" links into directory links
 - rewrites leftover absolute links to the original domain into relative ones
 """
@@ -43,6 +45,16 @@ COOKIE_BANNER = [
     r'<script type=["\']text/javascript["\']>\s*var gdpr_consent__strict.*?</script>\s*',
 ]
 MAPS_LINK = "https://www.google.com/maps/search/?api=1&amp;query=Simal+Business+Center%2C+Via+Zamenhof+817%2C+36100+Vicenza"
+# pages that only make sense with the WordPress backend, are empty, or are outdated
+REMOVED_PAGES = [
+    "event-registration", "transactions", "thank-you", "registration-cancelled", "eventi",
+    "tag", "category/senza-categoria", "sitecal", "sedi-dei-corsi",
+]
+# links to the original domain that moved or were malformed in the WordPress content
+MOVED_LINKS = {
+    "/calendario-dei-corsi/": "corsi/calendario-dei-corsi/",
+    "/lancio-del-progetto-officina-snella/http/www.facebook.com/OfficinaSnella": "https://www.facebook.com/OfficinaSnella",
+}
 COOKIE_PLUGIN_DIR ="wp-content/plugins/gdpr-cookie-compliance"
 
 
@@ -91,6 +103,13 @@ def fix_text(path, text):
     for pat in HEAD_CRUFT + COOKIE_BANNER:
         text = re.sub(pat, "", text, flags=re.S | re.I)
     prefix = relpath_to_root(path)
+    if os.path.relpath(path, ROOT) == "404.html":
+        # served at any URL, so it needs root-relative links; it was fetched raw (not via wget)
+        prefix = "/"
+        text = re.sub(r'((?:href|src)=["\'])' + DOMAIN_RE + r'/?', r"\1/", text)
+        text = re.sub(r'((?:href|src)=["\']/[^"\'?]*)\?ver=[^"\']*', r"\1", text)
+        text = text.replace("Error 404 - Page Not Found", "Errore 404 - Pagina non trovata")
+        text = text.replace("The page you are looking for could not be found.", "La pagina che cerchi non esiste.")
     # Google Fonts -> self-hosted copy in static/fonts (copied to the site root by build.sh)
     text = re.sub(
         r'<link href=["\']https://fonts\.googleapis\.com/css\?family=Droid\+Sans[^"\']*["\']',
@@ -124,12 +143,29 @@ def fix_text(path, text):
             return f'href="{prefix}{target.lstrip("/")}"' if target.strip("/") else f'href="{prefix or "./"}"'
         return m.group(0)
     text = re.sub(r'href="' + DOMAIN_RE + r'(/[^"#?]*)?"', lambda m: abs_to_rel(m) if m.group(1) is not None else f'href="{prefix or "./"}"', text)
+    # remaining links to the original domain: moved pages get their new target, the rest
+    # (pages that don't exist in the mirror, e.g. yearly archives) become plain text
+    def moved_or_unwrap(m):
+        target = MOVED_LINKS.get(m.group(2))
+        if target is None:
+            return m.group(4)
+        if not target.startswith("http"):
+            target = prefix + target
+        return m.group(1) + target + m.group(3) + m.group(4) + "</a>"
+    text = re.sub(
+        r'(<a\s[^>]*href=["\'])' + DOMAIN_RE + r'(/[^"\'#?]*)(["\'][^>]*>)(.*?)</a>',
+        moved_or_unwrap,
+        text,
+        flags=re.S,
+    )
     # foo/index.html -> foo/  ;  index.html -> ./
     text = re.sub(r'(href=["\'])((?:[^"\'#:]*/)?)index\.html(?=["\'#])', lambda m: m.group(1) + (m.group(2) or "./"), text)
     return text
 
 
 def main():
+    for page in REMOVED_PAGES:
+        shutil.rmtree(os.path.join(ROOT, page), ignore_errors=True)
     rename_assets()
     find_duplicates()
     for dirpath, _, files in os.walk(ROOT):
