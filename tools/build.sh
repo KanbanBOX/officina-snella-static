@@ -8,6 +8,13 @@ OUT=docs
 URLS=$(mktemp)
 trap 'rm -f "$URLS"' EXIT
 
+# the domain now points to GitHub Pages: the WordPress origin must be reached through /etc/hosts
+if ! curl -fsS -o /dev/null "$BASE/wp-json/"; then
+  echo "WordPress non raggiungibile su $BASE (il DNS punta a GitHub Pages)." >&2
+  echo "Aggiungi temporaneamente a /etc/hosts:  3.123.199.162 www.officinasnella.com" >&2
+  exit 1
+fi
+
 # seed: home page, every page/post/category/tag from the WP REST API, plus date/author archives
 echo "$BASE/" > "$URLS"
 for t in pages posts categories tags; do
@@ -38,6 +45,8 @@ wget --mirror --page-requisites --convert-links --adjust-extension --restrict-fi
   --reject-regex='(xmlrpc\.php|wp-json|/feed/|wp-login|replytocom|/comments/|wlwmanifest|wp-admin|%7B|%5C|/http/)' \
   -i "$URLS" -P "$OUT" || [ $? -eq 8 ]
 
+# self-hosted assets that replace third-party ones (e.g. Google Fonts)
+cp -r static/. "$OUT/"
 python3 tools/postprocess.py "$OUT"
 [ -f CNAME ] && cp CNAME "$OUT/CNAME"
 echo "Built $(find "$OUT" -name '*.html' | wc -l) pages in $OUT/"

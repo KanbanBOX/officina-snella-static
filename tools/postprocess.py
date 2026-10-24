@@ -5,6 +5,7 @@
   (e.g. jquery.js@ver=1.12.4 -> jquery.js, style.css@ver=4.9.34.css -> style.css)
 - removes WordPress head cruft that needs a live backend (feeds, oEmbed, xmlrpc, emoji)
 - removes the GDPR Cookie Compliance banner and its assets
+- points the Google Fonts stylesheet to the self-hosted copy in fonts/
 - turns ".../index.html" links into directory links
 - rewrites leftover absolute links to the original domain into relative ones
 """
@@ -88,6 +89,14 @@ def fix_text(path, text):
     for pat in HEAD_CRUFT + COOKIE_BANNER:
         text = re.sub(pat, "", text, flags=re.S | re.I)
     prefix = relpath_to_root(path)
+    # Google Fonts -> self-hosted copy in static/fonts (copied to the site root by build.sh)
+    text = re.sub(
+        r'<link href=["\']https://fonts\.googleapis\.com/css\?family=Droid\+Sans[^"\']*["\']',
+        f"<link href='{prefix}fonts/droid-sans.css'",
+        text,
+    )
+    # images still linked to the old staging host (now offline) -> local copy
+    text = re.sub(r'(src=["\'])https?://officinasnella\.nextep\.it/', lambda m: m.group(1) + prefix, text)
     # ?p=NN shortlinks (saved by wget as index.html@p=NN.html) -> real page
     text = re.sub(
         r'(["\'])(?:\.\./)*index\.html@p=(\d+)\.html(?=["\'#])',
